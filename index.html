@@ -98,12 +98,15 @@
     /* 補助コントロール群 */
     .quick-controls {
       display: flex;
-      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
       margin-top: 24px;
+      max-width: 304px;
     }
 
     .sub-btn {
-      padding: 10px 16px;
+      padding: 10px 14px;
       border: 1px solid #444;
       border-radius: 10px;
       background-color: #262626;
@@ -160,7 +163,7 @@
 
     .modal-card {
       width: 100%;
-      max-width: 340px;
+      max-width: 350px;
       background-color: #222222;
       border: 1px solid #3e3e3e;
       border-radius: 18px;
@@ -243,7 +246,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 14px;
+      padding: 10px 12px;
       background-color: #2c2c2c;
       border: 1px solid #3c3c3c;
       border-radius: 10px;
@@ -260,6 +263,15 @@
       background-color: #1e293b;
     }
 
+    .book-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+      margin-right: 8px;
+    }
+
     .book-item-name {
       font-size: 0.95rem;
       font-weight: 500;
@@ -267,17 +279,41 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      margin-right: 8px;
     }
 
     .badge-selected {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       background-color: #3b82f6;
       color: #ffffff;
-      padding: 3px 8px;
-      border-radius: 12px;
+      padding: 2px 7px;
+      border-radius: 10px;
       white-space: nowrap;
       font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    /* 削除ボタン */
+    .btn-delete-book {
+      background: transparent;
+      border: 1px solid #4a4a4a;
+      border-radius: 6px;
+      color: #ff6b6b;
+      font-size: 0.8rem;
+      padding: 5px 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .btn-delete-book:active:not(:disabled) {
+      background-color: rgba(255, 107, 107, 0.2);
+    }
+
+    .btn-delete-book:disabled {
+      color: #555555;
+      border-color: #333333;
+      cursor: not-allowed;
+      opacity: 0.4;
     }
   </style>
 </head>
@@ -309,6 +345,7 @@
     <button class="sub-btn" id="btn-minus10">-10</button>
     <button class="sub-btn" id="btn-reset">スタートへ</button>
     <button class="sub-btn" id="btn-plus10">+10</button>
+    <button class="sub-btn" id="btn-plus100">+100</button>
   </div>
 
   <!-- 本の変更ボタン -->
@@ -316,7 +353,7 @@
     <button class="btn-change-book" id="btn-open-modal">本の変更</button>
   </div>
 
-  <!-- 本の変更・登録用モーダル -->
+  <!-- 本の変更・登録・削除用モーダル -->
   <div class="modal-overlay" id="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
@@ -385,23 +422,52 @@
 
     function renderBookList() {
       bookList.innerHTML = '';
+      const canDelete = books.length > 1;
+
       books.forEach(b => {
         const li = document.createElement('li');
         const isSelected = b.id === currentBookId;
         li.className = `book-item ${isSelected ? 'selected' : ''}`;
 
+        // 本の情報エリア
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'book-info';
+
         const nameSpan = document.createElement('span');
         nameSpan.className = 'book-item-name';
         nameSpan.textContent = b.title;
-        li.appendChild(nameSpan);
+        infoDiv.appendChild(nameSpan);
 
         if (isSelected) {
           const badge = document.createElement('span');
           badge.className = 'badge-selected';
           badge.textContent = '選択中';
-          li.appendChild(badge);
+          infoDiv.appendChild(badge);
         }
+        li.appendChild(infoDiv);
 
+        // 削除ボタン
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-delete-book';
+        delBtn.textContent = '削除';
+        delBtn.disabled = !canDelete;
+
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation(); // 本の選択イベント発火を防止
+          if (books.length <= 1) return;
+
+          // 削除実行
+          books = books.filter(item => item.id !== b.id);
+          if (currentBookId === b.id) {
+            currentBookId = books[0].id;
+          }
+          saveState();
+          renderMainView();
+          renderBookList();
+        });
+        li.appendChild(delBtn);
+
+        // 本選択
         li.addEventListener('click', () => {
           currentBookId = b.id;
           renderMainView();
@@ -438,7 +504,11 @@
       });
     });
 
-    // 10ページ増減・リセット
+    // ページ一括増減・リセット
+    document.getElementById('btn-plus100').addEventListener('click', () => {
+      const book = getCurrentBook();
+      setPage(book.page + 100);
+    });
     document.getElementById('btn-plus10').addEventListener('click', () => {
       const book = getCurrentBook();
       setPage(book.page + 10);

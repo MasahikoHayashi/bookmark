@@ -14,7 +14,7 @@
       padding: 0;
       user-select: none;
       -webkit-user-select: none;
-      /* 連打ダブルタップ拡大を完全に無効化 */
+      /* 連打ダブルタップ拡大を無効化 */
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
@@ -31,11 +31,18 @@
       padding: 20px;
     }
 
-    h1 {
-      font-size: 1.1rem;
-      color: #777777;
-      letter-spacing: 3px;
+    /* 現在の本の名前表示 */
+    .current-book-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #e5e5e5;
+      letter-spacing: 1px;
       margin-bottom: 24px;
+      max-width: 304px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .container {
@@ -88,14 +95,7 @@
       border-color: #3b82f6;
     }
 
-    /* 現在地表示 */
-    .status-text {
-      margin-top: 28px;
-      font-size: 1.1rem;
-      color: #999999;
-    }
-
-    /* 追加した補助コントロール群 */
+    /* 補助コントロール群 */
     .quick-controls {
       display: flex;
       gap: 10px;
@@ -117,9 +117,174 @@
       background-color: #383838;
       color: #ffffff;
     }
+
+    /* 本の変更ボタンエリア */
+    .book-change-area {
+      margin-top: 24px;
+      width: 100%;
+      max-width: 304px;
+    }
+
+    .btn-change-book {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #555555;
+      border-radius: 10px;
+      background-color: #262626;
+      color: #e5e5e5;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-change-book:active {
+      background-color: #383838;
+    }
+
+    /* --- モーダル（オーバーレイ） --- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1000;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 340px;
+      background-color: #222222;
+      border: 1px solid #3e3e3e;
+      border-radius: 18px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #ffffff;
+    }
+
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      color: #888888;
+      font-size: 1.4rem;
+      cursor: pointer;
+      padding: 0 6px;
+      line-height: 1;
+    }
+
+    /* 新規本追加入力フォーム */
+    .add-book-form {
+      display: flex;
+      gap: 8px;
+    }
+
+    .add-book-input {
+      flex: 1;
+      background: #151515;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #ffffff;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .add-book-input:focus {
+      border-color: #3b82f6;
+    }
+
+    .add-book-btn {
+      background-color: #3b82f6;
+      border: none;
+      border-radius: 8px;
+      color: #ffffff;
+      font-weight: bold;
+      padding: 0 14px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .add-book-btn:active {
+      opacity: 0.85;
+    }
+
+    /* 本の一覧リスト */
+    .book-list {
+      list-style: none;
+      max-height: 240px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .book-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background-color: #2c2c2c;
+      border: 1px solid #3c3c3c;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .book-item:active {
+      background-color: #383838;
+    }
+
+    .book-item.selected {
+      border-color: #3b82f6;
+      background-color: #1e293b;
+    }
+
+    .book-item-name {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #ffffff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-right: 8px;
+    }
+
+    .badge-selected {
+      font-size: 0.75rem;
+      background-color: #3b82f6;
+      color: #ffffff;
+      padding: 3px 8px;
+      border-radius: 12px;
+      white-space: nowrap;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
+
+  <!-- 現在読書中の本のタイトル -->
+  <div class="current-book-title" id="book-title">読書中の本 1</div>
 
   <div class="container">
     <!-- 左列: ページ操作 -->
@@ -139,7 +304,6 @@
     </div>
   </div>
 
-
   <!-- クイック操作ボタン -->
   <div class="quick-controls">
     <button class="sub-btn" id="btn-minus10">-10</button>
@@ -147,54 +311,187 @@
     <button class="sub-btn" id="btn-plus10">+10</button>
   </div>
 
-  <script>
-    const STORAGE_KEY_PAGE = 'bm_p';
-    const STORAGE_KEY_POS = 'bm_pos';
+  <!-- 本の変更ボタン -->
+  <div class="book-change-area">
+    <button class="btn-change-book" id="btn-open-modal">本の変更</button>
+  </div>
 
+  <!-- 本の変更・登録用モーダル -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">本の一覧・切り替え</div>
+        <button class="modal-close-btn" id="btn-close-modal">✕</button>
+      </div>
+
+      <!-- 本の追加 -->
+      <form class="add-book-form" id="add-book-form">
+        <input type="text" class="add-book-input" id="new-book-title" placeholder="新しい本のタイトル..." required>
+        <button type="submit" class="add-book-btn">追加</button>
+      </form>
+
+      <!-- 本リスト -->
+      <ul class="book-list" id="book-list"></ul>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY_BOOKS = 'bm_books_v1';
+    const STORAGE_KEY_CURRENT_ID = 'bm_current_book_id';
+
+    // 初期データ
+    const defaultBooks = [
+      { id: '1', title: '読書中の本 1', page: 1, pos: 'TOP' }
+    ];
+
+    let books = JSON.parse(localStorage.getItem(STORAGE_KEY_BOOKS)) || defaultBooks;
+    let currentBookId = localStorage.getItem(STORAGE_KEY_CURRENT_ID) || books[0].id;
+
+    // DOM要素
+    const bookTitleDisplay = document.getElementById('book-title');
     const pageInput = document.getElementById('page-input');
     const posButtons = document.querySelectorAll('.pos-btn');
-    const statusDisplay = document.getElementById('status-display');
 
-    let page = parseInt(localStorage.getItem(STORAGE_KEY_PAGE), 10) || 1;
-    let pos = localStorage.getItem(STORAGE_KEY_POS) || 'TOP';
+    const modalOverlay = document.getElementById('modal-overlay');
+    const btnOpenModal = document.getElementById('btn-open-modal');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const bookList = document.getElementById('book-list');
+    const addBookForm = document.getElementById('add-book-form');
+    const newBookTitle = document.getElementById('new-book-title');
 
-    function update() {
-      pageInput.value = page;
+    function getCurrentBook() {
+      let book = books.find(b => b.id === currentBookId);
+      if (!book) {
+        book = books[0];
+        currentBookId = book.id;
+      }
+      return book;
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(books));
+      localStorage.setItem(STORAGE_KEY_CURRENT_ID, currentBookId);
+    }
+
+    function renderMainView() {
+      const book = getCurrentBook();
+      bookTitleDisplay.textContent = book.title;
+      pageInput.value = book.page;
       posButtons.forEach(b => {
-        b.classList.toggle('active', b.dataset.pos === pos);
+        b.classList.toggle('active', b.dataset.pos === book.pos);
       });
-      statusDisplay.textContent = `現在地: ${page} ページ / ${pos}`;
-      localStorage.setItem(STORAGE_KEY_PAGE, page);
-      localStorage.setItem(STORAGE_KEY_POS, pos);
+      saveState();
+    }
+
+    function renderBookList() {
+      bookList.innerHTML = '';
+      books.forEach(b => {
+        const li = document.createElement('li');
+        const isSelected = b.id === currentBookId;
+        li.className = `book-item ${isSelected ? 'selected' : ''}`;
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'book-item-name';
+        nameSpan.textContent = b.title;
+        li.appendChild(nameSpan);
+
+        if (isSelected) {
+          const badge = document.createElement('span');
+          badge.className = 'badge-selected';
+          badge.textContent = '選択中';
+          li.appendChild(badge);
+        }
+
+        li.addEventListener('click', () => {
+          currentBookId = b.id;
+          renderMainView();
+          modalOverlay.classList.remove('open');
+        });
+
+        bookList.appendChild(li);
+      });
     }
 
     function setPage(n) {
-      page = Math.max(1, n);
-      update();
+      const book = getCurrentBook();
+      book.page = Math.max(1, n);
+      renderMainView();
     }
 
-    // 矢印・入力
-    document.getElementById('btn-up').addEventListener('click', () => setPage(page + 1));
-    document.getElementById('btn-down').addEventListener('click', () => setPage(page - 1));
+    // ページ増減・入力
+    document.getElementById('btn-up').addEventListener('click', () => {
+      const book = getCurrentBook();
+      setPage(book.page + 1);
+    });
+    document.getElementById('btn-down').addEventListener('click', () => {
+      const book = getCurrentBook();
+      setPage(book.page - 1);
+    });
     pageInput.addEventListener('change', (e) => setPage(parseInt(e.target.value, 10) || 1));
 
     // 位置切り替え
     posButtons.forEach(b => {
       b.addEventListener('click', () => {
-        pos = b.dataset.pos;
-        update();
+        const book = getCurrentBook();
+        book.pos = b.dataset.pos;
+        renderMainView();
       });
     });
 
     // 10ページ増減・リセット
-    document.getElementById('btn-plus10').addEventListener('click', () => setPage(page + 10));
-    document.getElementById('btn-minus10').addEventListener('click', () => setPage(page - 10));
+    document.getElementById('btn-plus10').addEventListener('click', () => {
+      const book = getCurrentBook();
+      setPage(book.page + 10);
+    });
+    document.getElementById('btn-minus10').addEventListener('click', () => {
+      const book = getCurrentBook();
+      setPage(book.page - 10);
+    });
     document.getElementById('btn-reset').addEventListener('click', () => {
-      pos = 'TOP';
+      const book = getCurrentBook();
+      book.pos = 'TOP';
       setPage(1);
     });
 
-    update();
+    // モーダル開閉
+    btnOpenModal.addEventListener('click', () => {
+      renderBookList();
+      modalOverlay.classList.add('open');
+    });
+
+    btnCloseModal.addEventListener('click', () => {
+      modalOverlay.classList.remove('open');
+    });
+
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) {
+        modalOverlay.classList.remove('open');
+      }
+    });
+
+    // 本の追加処理
+    addBookForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = newBookTitle.value.trim();
+      if (!title) return;
+
+      const newBook = {
+        id: Date.now().toString(),
+        title: title,
+        page: 1,
+        pos: 'TOP'
+      };
+
+      books.push(newBook);
+      currentBookId = newBook.id;
+      newBookTitle.value = '';
+
+      renderMainView();
+      modalOverlay.classList.remove('open');
+    });
+
+    // 初期表示
+    renderMainView();
   </script>
 </body>
 </html>
